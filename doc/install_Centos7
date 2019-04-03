@@ -1,0 +1,141 @@
+#!/bin/sh
+
+# requirement: mini install centos 7, internet connection
+# V1.0.0
+# patrick.ru@hotmail.com
+# 2019-04-01
+
+# root/Passw@rd
+# IP: 192.168.2.10/24
+# GW: 192.168.2.1
+# DNS:192.168.2.1
+
+
+# check centos 7 IP address
+ip address 
+
+# setting ip information before login
+cat >> /etc/issue <<EOF
+HoseName: \\n
+Server IPv4: \\4{ens192}
+Server IPv6: \\6{ens192}
+
+EOF
+
+# add host resolve
+sed 's/localhost/xiaoyaoji/g' /etc/hosts >> /etc/hosts
+
+# disable selinux
+sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config
+/usr/sbin/setenforce 0
+
+# add firewall rule
+firewall-cmd --zone=public --add-port=80/tcp --permanent
+firewall-cmd --zone=public --add-port=8080/tcp --permanent
+firewall-cmd --zone=public --add-port=3306/tcp --permanent
+firewall-cmd --zone=public --add-port=6379/tcp --permanent
+firewall-cmd --reload
+
+# yum source site from ustc
+if [ ! -f /etc/yum.repos.d/CentOS-Base.repo.bak ];then
+  cp /etc/yum.repos.d/{CentOS-Base.repo,CentOS-Base.repo.bak}
+  sed -i 's/^#baseurl/baseurl/g' /etc/yum.repos.d/CentOS-Base.repo
+  sed -i '/^mirrorlist/d' /etc/yum.repos.d/CentOS-Base.repo
+  sed -i 's/mirror.centos.org/mirrors.tuna.tsinghua.edu.cn/g' /etc/yum.repos.d/CentOS-Base.repo
+fi
+
+# epel-release
+yum install epel-release -y
+if [ ! -f /etc/yum.repos.d/epel.repo.bak ];then
+  cp /etc/yum.repos.d/{epel.repo,epel.repo.bak}
+  sed -i 's/^#baseurl/baseurl/g' /etc/yum.repos.d/epel.repo
+  sed -i 's/^metalink/#metalink/g' /etc/yum.repos.d/epel.repo
+  sed -i 's/download.fedoraproject.org\/pub/mirrors.tuna.tsinghua.edu.cn/g' /etc/yum.repos.d/epel.repo
+fi
+yum clean all
+yum check-update
+yum makecache 
+yum update -y 
+
+yum install -y yum-utils vim wget net-tools
+
+package-cleanup --oldkernels --count=1 -y
+
+# install mysql-community
+cat > /etc/yum.repos.d/mysql.repo <<EOF
+[mysql57-community]
+name=MySQL 5.7 Community Server
+baseurl=http://repo.mysql.com/yum/mysql-5.7-community/el/\$releasever/\$basearch/
+enabled=1
+gpgcheck=1
+gpgkey=http://repo.mysql.com/RPM-GPG-KEY-mysql
+EOF
+
+yum install -y mysql-community-server
+
+systemctl enable mysqld.service
+systemctl start mysqld.service
+systemctl status mysqld.service
+
+
+# install tomcat 7
+yum install -y tomcat tomcat-webapps tomcat-admin-webapps 	# 7.0.76
+if [ ! -f /etc/tomcat/tomcat-users.xml.bak ];then
+  cp /etc/tomcat/{tomcat-users.xml,tomcat-users.xml.bak}
+  sed -i '/^<\/tomcat-users>/i\<role rolename="manager-gui" \/>' /etc/tomcat/tomcat-users.xml
+  sed -i '/^<\/tomcat-users>/i\<role rolename="admin-gui" \/>' /etc/tomcat/tomcat-users.xml
+  sed -i '/^<\/tomcat-users>/i\<user username="tomcat" password="6m4HxL53TvDLYkbk" roles="manager-gui, admin-gui" \/>' /etc/tomcat/tomcat-users.xml
+fi
+
+cat /etc/tomcat/tomcat-users.xml
+
+systemctl enable tomcat.service
+systemctl start tomcat.service
+systemctl status tomcat.service
+
+
+# install redis
+yum install redis -y 	# 3.2.12
+# /etc/redis.conf
+if [ ! -f /etc/redis.conf.bak ];then
+  cp /etc/{redis.conf,redis.conf.bak}
+  sed -i '/^# requirepass/a\requirepass xyj@redis' /etc/redis.conf
+fi
+
+systemctl enable redis.service
+systemctl start redis.service
+systemctl status redis.service
+
+
+# install nginx
+cat > /etc/yum.repos.d/nginx.repo <<EOF
+[nginx]
+name=nginx repo
+baseurl=http://nginx.org/packages/centos/\$releasever/\$basearch/
+gpgcheck=0
+enabled=1
+EOF
+yum install -y nginx 
+
+if [ ! -f /etc/nginx/conf.d/default.conf.bak ];then
+  cp /etc/nginx/conf.d/{default.conf,default.conf.bak}
+  sed -i 's/index.html/login.jsp index.html/g' /etc/nginx/conf.d/default.conf
+  sed -i '/login.jsp/a\        proxy_pass  http://127.0.0.1:8080;' /etc/nginx/conf.d/default.conf
+fi
+
+systemctl enable nginx.service
+systemctl start nginx.service
+systemctl status nginx.service
+
+# xiaoyaoji
+cd ~
+mkdir -p /usr/share/tomcat/webapps/apidoc
+
+wget -N https://github.com/zhoujingjie/xiaoyaoji/releases/download/v2.1.7/xiaoyao-2.1.7.zip || exit 1
+unzip ~/xiaoyao-2.1.7.zip -d /usr/share/tomcat/webapps/apidoc/
+chown -R tomcat:tomcat /usr/share/tomcat/webapps/apidoc
+
+# post installation need add here.
+
+
+exit 0
