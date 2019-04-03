@@ -23,6 +23,10 @@ public class RedisCacheProvider implements CacheProvider {
     public RedisCacheProvider(String host, int port, int timeout, String password) {
         pool = new JedisPool(new JedisPoolConfig(), host, port, timeout, password);
     }
+    
+    public RedisCacheProvider(String host, int port, int timeout, String password, int database) {
+        pool = new JedisPool(new JedisPoolConfig(), host, port, timeout, password, int database);
+    }
 
     public RedisCacheProvider(String host, int port) {
         this(host, port, 2000);
