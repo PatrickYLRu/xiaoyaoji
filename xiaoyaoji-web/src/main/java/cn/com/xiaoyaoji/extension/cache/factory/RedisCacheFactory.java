@@ -14,6 +14,7 @@ public class RedisCacheFactory implements CacheFactory {
     public CacheProvider create() {
         return new RedisCacheProvider(ConfigUtils.getProperty("redis.host"),
                 Integer.parseInt(ConfigUtils.getProperty("redis.port")),
+                Integer.parseInt(ConfigUtils.getProperty("redis.database")),
                 Integer.parseInt(ConfigUtils.getProperty("redis.connection.timeout")),
                 ConfigUtils.getProperty("redis.password")
         );
