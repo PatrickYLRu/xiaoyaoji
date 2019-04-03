@@ -305,7 +305,7 @@ CREATE TABLE `user_third` (
 -- ----------------------------
 DROP PROCEDURE IF EXISTS `trans_module`;
 DELIMITER ;;
-CREATE DEFINER=`root`@`%` PROCEDURE `trans_module`()
+CREATE DEFINER=CURRENT_USER PROCEDURE `trans_module`()
 begin
 DECLARE done INT DEFAULT FALSE;
 declare id varchar(100);
