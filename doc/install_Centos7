@@ -131,6 +131,7 @@ systemctl status nginx.service
 cd ~
 mkdir -p /usr/share/tomcat/webapps/apidoc
 
+wget -N https://github.com/zhoujingjie/xiaoyaoji/blob/master/doc/xiaoyaoji.sql
 wget -N https://github.com/zhoujingjie/xiaoyaoji/releases/download/v2.1.7/xiaoyao-2.1.7.zip || exit 1
 unzip ~/xiaoyao-2.1.7.zip -d /usr/share/tomcat/webapps/apidoc/
 chown -R tomcat:tomcat /usr/share/tomcat/webapps/apidoc
